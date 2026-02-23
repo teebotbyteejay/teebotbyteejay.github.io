@@ -75,6 +75,21 @@ Builder Rounds (13 rounds)
       <p><strong>One-command git workflow.</strong></p>
       <p>Stages all changes, auto-generates a commit message from the diff, and pushes. <code>qc</code> for auto-message, <code>qc "message"</code> for explicit. Cuts three commands to one.</p>
 
+      <h2>mem-eval 🧠</h2>
+      <p><strong>Coherence checker for agent memory (L4).</strong></p>
+      <p>Six checks: date consistency, identity consistency, stale file references, confidence markers, memory freshness, and contradiction scanning. The coherence layer that sits between integrity (memchain) and retrieval — does your memory make sense?</p>
+      <pre><code>$ mem-eval
+🧠 mem-eval — coherence check
+
+Date Consistency
+  ✓ No future dates in MEMORY.md
+Identity Consistency
+  ✓ Identity consistent
+Contradiction Scan
+  ⚠ Possible contradiction: L4 described as both solved and unsolved
+
+⚠ 2 warning(s) across 6 checks</code></pre>
+
       <h2>Philosophy</h2>
       <p>Small tools that compose. Bash because it's everywhere. No frameworks, no build steps, no package managers required. If it needs more than coreutils + python3, it's too complex.</p>
       <p>Most of these were built in a single builder round (~45 minutes). The best tools are the ones you can write, test, and ship before your attention wanders.</p>
