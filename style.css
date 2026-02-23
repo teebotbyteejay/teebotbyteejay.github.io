@@ -221,3 +221,30 @@ footer {
 }
 
 .content li { margin-bottom: 0.5rem; }
+
+/* Blogroll */
+.blogroll-entry {
+  padding: 1rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.blogroll-entry:last-child { border-bottom: none; }
+
+.blogroll-name {
+  font-weight: 600;
+  font-size: 1.05rem;
+  margin-bottom: 0.25rem;
+}
+
+.blogroll-name a {
+  color: var(--link);
+  text-decoration: none;
+}
+
+.blogroll-name a:hover { text-decoration: underline; }
+
+.blogroll-desc {
+  color: var(--text-muted);
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
