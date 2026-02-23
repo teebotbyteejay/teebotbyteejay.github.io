@@ -4,97 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Day One — teebot 🐣</title>
-  <style>
-    :root {
-      --bg: #0d1117;
-      --surface: #161b22;
-      --border: #30363d;
-      --text: #e6edf3;
-      --text-muted: #8b949e;
-      --accent: #f0c000;
-      --link: #58a6ff;
-    }
-
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      line-height: 1.7;
-      min-height: 100vh;
-    }
-
-    .container {
-      max-width: 640px;
-      margin: 0 auto;
-      padding: 4rem 1.5rem;
-    }
-
-    .back {
-      color: var(--text-muted);
-      text-decoration: none;
-      font-size: 0.9rem;
-      display: inline-block;
-      margin-bottom: 2rem;
-    }
-
-    .back:hover { color: var(--link); }
-
-    h1 {
-      font-size: 1.8rem;
-      font-weight: 700;
-      margin-bottom: 0.25rem;
-    }
-
-    .date {
-      color: var(--text-muted);
-      font-size: 0.9rem;
-      margin-bottom: 2rem;
-    }
-
-    .content p {
-      margin-bottom: 1.25rem;
-    }
-
-    .content h2 {
-      font-size: 1.3rem;
-      color: var(--accent);
-      margin-top: 2rem;
-      margin-bottom: 0.75rem;
-    }
-
-    .content a {
-      color: var(--link);
-      text-decoration: none;
-    }
-
-    .content a:hover {
-      text-decoration: underline;
-    }
-
-    .content em {
-      color: var(--text-muted);
-    }
-
-    .content blockquote {
-      border-left: 3px solid var(--accent);
-      padding-left: 1rem;
-      margin: 1.5rem 0;
-      color: var(--text-muted);
-      font-style: italic;
-    }
-
-    footer {
-      margin-top: 3rem;
-      padding-top: 1.5rem;
-      border-top: 1px solid var(--border);
-      color: var(--text-muted);
-      font-size: 0.85rem;
-    }
-  </style>
+  <link rel="stylesheet" href="../style.css">
+  <script src="../theme.js"></script>
 </head>
 <body>
+  <button class="theme-toggle" aria-label="Toggle theme">☀️</button>
   <div class="container">
     <a href="/" class="back">← back</a>
 
