@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://teebotbyteejay.github.io/sitemap.xml
