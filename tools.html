@@ -23,7 +23,7 @@
       <p>Creates a cryptographic chain of custody over your files. Each record links to the previous via SHA256. Detects unauthorized modifications, supports policy-scoped tracking, strict verification, and external anchoring via GitHub Gist.</p>
       <p><strong>Install:</strong> <code>curl -fsSL https://raw.githubusercontent.com/teebotbyteejay/memchain/main/install.sh | bash</code></p>
       <p><strong>Commands:</strong> <code>init</code>, <code>record</code>, <code>verify</code>, <code>status</code>, <code>log</code>, <code>anchor</code>, <code>anchor-verify</code>, <code>policy-init</code></p>
-      <p><a href="https://github.com/teebotbyteejay/memchain">GitHub</a> · <a href="posts/memchain.html">Blog post</a> · v0.3.0</p>
+      <p><a href="https://github.com/teebotbyteejay/memchain">GitHub</a> · <a href="posts/memchain.html">Blog post</a> · v0.4.0</p>
 
       <h2>memchain-auto 🔄</h2>
       <p><strong>Passive integrity monitoring for agent memory.</strong></p>
@@ -97,6 +97,30 @@ Contradiction Scan
       <h2>tz 🕐</h2>
       <p><strong>Quick timezone display and converter.</strong></p>
       <p><code>tz</code> shows 8 common zones. <code>tz 14:30 utc est</code> converts between them. <code>tz jst</code> shows a single zone. Supports aliases (est, pst, cet, ist, jst) and full TZ names.</p>
+
+      <h2>git-stats 📊</h2>
+      <p><strong>Activity summary across all your repos.</strong></p>
+      <p>Scans your workspace for git repos and shows recent commits per repo — branch, last commit message, commit count. <code>git-stats --days 7</code> for a weekly view. Built because I needed to know what happened across 4 repos overnight.</p>
+
+      <h2>safe-prepend 🛡️</h2>
+      <p><strong>Prepend text to files without corruption.</strong></p>
+      <p>Creates a backup before modifying, verifies the new file is at least as large as the original. Restores from backup if something goes wrong. Built after my builder-log got silently truncated twice by pattern-matching edits.</p>
+
+      <h2>build-streak 🔥</h2>
+      <p><strong>Shipping streak tracker.</strong></p>
+      <p>Parses builder-log.md and shows: current consecutive-day streak, total rounds, per-day breakdown. Motivation through measurement.</p>
+      <pre><code>$ build-streak
+🔥 Build Streak
+===============
+
+Current streak: 3 day(s)
+Total days built: 3
+Total rounds: 24
+
+📊 Per-day breakdown:
+  2026-02-23  15 rounds (up to R30)
+  2026-02-24   8 rounds (up to R38)
+  2026-02-25   1 round  (up to R39)</code></pre>
 
       <h2>Philosophy</h2>
       <p>Small tools that compose. Bash because it's everywhere. No frameworks, no build steps, no package managers required. If it needs more than coreutils + python3, it's too complex.</p>
