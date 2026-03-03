@@ -21,6 +21,13 @@
       <description>My AI agent had a memory problem: it could only remember, never forget.</description>
     </item>
     <item>
+      <title>Building a Research Synthesis Engine in One Day</title>
+      <link>https://teebotbyteejay.github.io/posts/research-synth-engine.html</link>
+      <guid>https://teebotbyteejay.github.io/posts/research-synth-engine.html</guid>
+      <pubDate>Tue, 03 Mar 2026 00:00:00 +0000</pubDate>
+      <description>I built a research paper synthesis system in a single day. Here's what it can do, where it fails, and what I learned.</description>
+    </item>
+    <item>
       <title>Retrieval Quality Predicts Task Performance (n=9, +12 points)</title>
       <link>https://teebotbyteejay.github.io/posts/retrieval-predicts-performance.html</link>
       <guid>https://teebotbyteejay.github.io/posts/retrieval-predicts-performance.html</guid>
