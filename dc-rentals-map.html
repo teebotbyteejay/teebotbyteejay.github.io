@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>DC Metro Rentals — Walk Score 80+ | 3BR+</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+        #map { height: 100vh; width: 100%; }
+        .popup-content { max-width: 300px; line-height: 1.5; }
+        .popup-content h3 { margin: 0 0 6px 0; font-size: 15px; color: #1a1a1a; }
+        .popup-content .type-badge {
+            display: inline-block; padding: 2px 8px; border-radius: 12px;
+            font-size: 11px; font-weight: 600; margin-bottom: 6px;
+        }
+        .type-rowhouse { background: #e8f5e9; color: #2e7d32; }
+        .type-townhouse { background: #e3f2fd; color: #1565c0; }
+        .type-condo { background: #fff3e0; color: #e65100; }
+        .type-townhome { background: #f3e5f5; color: #7b1fa2; }
+        .type-apartment { background: #fce4ec; color: #c62828; }
+        .popup-content .details { font-size: 13px; color: #444; }
+        .popup-content .details div { margin: 3px 0; }
+        .popup-content .rent { font-size: 18px; font-weight: 700; color: #1b5e20; margin: 4px 0; }
+        .popup-content .walkscore { font-weight: 600; color: #0d47a1; }
+        .popup-content .highlights { font-size: 12px; color: #666; margin-top: 6px; font-style: italic; }
+        .popup-content a { color: #1565c0; text-decoration: none; font-weight: 600; }
+        .popup-content a:hover { text-decoration: underline; }
+        .legend {
+            position: absolute; bottom: 30px; left: 10px; z-index: 1000;
+            background: white; padding: 12px 16px; border-radius: 8px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.15); font-size: 12px;
+        }
+        .legend h4 { margin: 0 0 8px 0; font-size: 13px; }
+        .legend-item { display: flex; align-items: center; margin: 4px 0; }
+        .legend-dot { width: 12px; height: 12px; border-radius: 50%; margin-right: 8px; border: 2px solid white; box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
+        .info-panel {
+            position: absolute; top: 10px; right: 10px; z-index: 1000;
+            background: white; padding: 12px 16px; border-radius: 8px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.15); font-size: 13px; max-width: 220px;
+        }
+        .info-panel h3 { margin: 0 0 4px 0; font-size: 15px; }
+        .info-panel p { margin: 0; color: #666; font-size: 12px; }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+    <div class="legend">
+        <h4>Property Types</h4>
+        <div class="legend-item"><div class="legend-dot" style="background:#2e7d32;"></div> Rowhouse</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#1565c0;"></div> Townhouse</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#e65100;"></div> Condo</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#7b1fa2;"></div> Townhome (managed)</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#c62828;"></div> Apartment</div>
+    </div>
+    <div class="info-panel">
+        <h3>🏠 DC Metro Rentals</h3>
+        <p>Walk Score 80+ · 3BR+ · 1000+ sqft<br>17 listings · March 2026<br>Click markers for details</p>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+    const map = L.map('map').setView([38.905, -77.035], 12);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors',
+        maxZoom: 18
+    }).addTo(map);
+
+    const colors = {
+        'Rowhouse': '#2e7d32',
+        'Townhouse': '#1565c0',
+        'Condo': '#e65100',
+        'Townhome': '#7b1fa2',
+        'Apartment': '#c62828'
+    };
+
+    function badge(type) {
+        const cls = 'type-' + type.toLowerCase().replace(/\s/g,'');
+        return `<span class="type-badge ${cls}">${type}</span>`;
+    }
+
+    function makeIcon(color) {
+        return L.divIcon({
+            className: '',
+            html: `<div style="
+                width: 28px; height: 28px; border-radius: 50%;
+                background: ${color}; border: 3px solid white;
+                box-shadow: 0 2px 6px rgba(0,0,0,0.35);
+                display: flex; align-items: center; justify-content: center;
+                color: white; font-size: 12px; font-weight: 700;
+            "></div>`,
+            iconSize: [28, 28],
+            iconAnchor: [14, 14],
+            popupAnchor: [0, -16]
+        });
+    }
+
+    function makeNumberedIcon(color, num) {
+        return L.divIcon({
+            className: '',
+            html: `<div style="
+                width: 30px; height: 30px; border-radius: 50%;
+                background: ${color}; border: 3px solid white;
+                box-shadow: 0 2px 6px rgba(0,0,0,0.35);
+                display: flex; align-items: center; justify-content: center;
+                color: white; font-size: 13px; font-weight: 700;
+            ">${num}</div>`,
+            iconSize: [30, 30],
+            iconAnchor: [15, 15],
+            popupAnchor: [0, -18]
+        });
+    }
+
+    const listings = [
+        {
+            n: 1, lat: 38.8925, lng: -76.9868,
+            address: "514 14th St NE", type: "Rowhouse", hood: "Kingman Park, DC",
+            ws: 85, bd: "3/1.5", sqft: "1,392", rent: "$2,695", ppsf: "$1.94",
+            parking: "Street (ample)", url: "https://www.redfin.com/DC/Washington/514-14th-St-NE-20002/home/9912927",
+            highlights: "Updated kitchen & baths, private backyard, fireplace, walkable to H Street restaurants, near Stadium-Armory Metro"
+        },
+        {
+            n: 2, lat: 38.8940, lng: -76.9785,
+            address: "246 Division Ave NE", type: "Townhouse", hood: "Kingman Park, DC",
+            ws: 80, bd: "3/3", sqft: "1,200", rent: "$2,500", ppsf: "$2.08",
+            parking: "Street; landlord pays internet", url: "https://www.apartments.com/246-division-ave-ne-washington-dc/0tghlc3/",
+            highlights: "Most affordable option, 3 full baths, landlord covers internet + lawn maintenance"
+        },
+        {
+            n: 3, lat: 38.9415, lng: -77.0320,
+            address: "310 Taylor St NW", type: "Rowhouse", hood: "Petworth, DC",
+            ws: 85, bd: "3/2.5", sqft: "1,728", rent: "$3,599", ppsf: "$2.08",
+            parking: "Off-street included", url: "https://www.apartments.com/310-taylor-st-nw-washington-dc/07f6zk1/",
+            highlights: "Spacious classic Petworth rowhouse, 13-min to Georgia Ave-Petworth Metro, pets OK"
+        },
+        {
+            n: 4, lat: 38.9420, lng: -77.0335,
+            address: "1419 Upshur St NW #1", type: "Condo", hood: "Petworth, DC",
+            ws: 85, bd: "3/2.5", sqft: "1,164", rent: "$3,599", ppsf: "$3.09",
+            parking: "Outdoor parking included", url: "https://www.apartments.com/1419-upshur-st-nw-washington-dc/yl5k5zr/",
+            highlights: "Modern condo, fireplace, extra storage, in-unit laundry, near Petworth Metro"
+        },
+        {
+            n: 5, lat: 38.9435, lng: -77.0325,
+            address: "4115 5th St NW", type: "Rowhouse", hood: "Petworth, DC",
+            ws: 85, bd: "3/2.5", sqft: "1,650", rent: "$3,750", ppsf: "$2.27",
+            parking: "Street parking", url: "https://www.apartments.com/4115-5th-st-nw-washington-dc/g7cc0jx/",
+            highlights: "Exposed brick, fireplace, natural light, in-unit laundry, near Petworth Metro"
+        },
+        {
+            n: 6, lat: 38.9445, lng: -77.0340,
+            address: "4718 15th St NW", type: "Rowhouse", hood: "Petworth, DC",
+            ws: 85, bd: "3/2", sqft: "1,650", rent: "$3,750", ppsf: "$2.27",
+            parking: "2 spaces included", url: "https://www.rent.com/district-of-columbia/washington-houses/petworth-neighborhood",
+            highlights: "Historic 1920 rowhouse, 4 levels, front porch, near Georgia Ave-Petworth Metro"
+        },
+        {
+            n: 7, lat: 38.8838, lng: -76.9955,
+            address: "216 9th St SE", type: "Townhouse", hood: "Capitol Hill, DC",
+            ws: 89, bd: "3/2.5", sqft: "~1,300", rent: "$3,800", ppsf: "$2.92",
+            parking: "Street (RPP zone)", url: "https://www.apartments.com/216-9th-st-se-washington-dc/nvvc2gq/",
+            highlights: "2 blocks from Eastern Market Metro, hardwood floors, cathedral ceilings, chef's kitchen"
+        },
+        {
+            n: 8, lat: 38.8768, lng: -76.9935,
+            address: "1122 K St SE", type: "Townhouse", hood: "Capitol Hill/Navy Yard, DC",
+            ws: 87, bd: "3/2.5", sqft: "1,540", rent: "$3,900", ppsf: "$2.53",
+            parking: "Street parking", url: "https://www.rent.com/r/1122-k-st-se-washington-dc",
+            highlights: "Near Nationals Park and Navy Yard waterfront, walkable to restaurants + Metro"
+        },
+        {
+            n: 9, lat: 38.8890, lng: -76.9985,
+            address: "833 6th St NE", type: "Rowhouse", hood: "Capitol Hill, DC",
+            ws: 89, bd: "3/1.5", sqft: "1,162", rent: "$4,100", ppsf: "$3.53",
+            parking: "Street parking", url: "https://www.forrent.com/find/DC/metro-Washington+DC/Washington/beds-3",
+            highlights: "Classic Capitol Hill row, renovated, near Eastern Market, H Street, multiple Metros"
+        },
+        {
+            n: 10, lat: 38.8048, lng: -77.0470,
+            address: "316 S Columbus St", type: "Townhouse", hood: "Old Town Alexandria, VA",
+            ws: 83, bd: "3/1.5", sqft: "1,098", rent: "$4,280", ppsf: "$3.90",
+            parking: "Off-street included", url: "https://www.apartments.com/old-town-alexandria-va/3-bedrooms/",
+            highlights: "Historic Old Town, brick courtyard, fireplace, hardwood, W/D, walk to King St Metro + waterfront"
+        },
+        {
+            n: 11, lat: 38.9095, lng: -77.0225,
+            address: "1003 P St NW, Unit A", type: "Townhouse", hood: "Shaw/Logan Circle, DC",
+            ws: 92, bd: "3/2", sqft: "1,300", rent: "$4,700", ppsf: "$3.62",
+            parking: "Street (RPP zone)", url: "https://www.apartments.com/1003-p-st-nw-washington-dc/vme9kyg/",
+            highlights: "One of DC's most walkable neighborhoods, steps from U Street Metro, incredible restaurants"
+        },
+        {
+            n: 12, lat: 38.9168, lng: -77.0125,
+            address: "2607 1st St NW", type: "Townhouse", hood: "LeDroit Park, DC",
+            ws: 88, bd: "3/2", sqft: "~1,400", rent: "$5,000", ppsf: "$3.57",
+            parking: "Garage included", url: "https://www.zumper.com/houses-for-rent/washington-dc/columbia-heights/3-beds",
+            highlights: "New construction, in-unit laundry, garage parking (rare!), near Shaw-Howard Metro"
+        },
+        {
+            n: 13, lat: 38.9298, lng: -77.0295,
+            address: "3015 13th St NW", type: "Townhouse", hood: "Columbia Heights, DC",
+            ws: 93, bd: "3/3", sqft: "~1,600", rent: "$5,950", ppsf: "$3.72",
+            parking: "2-car private garage", url: "https://www.homes.com/washington-dc/homes-for-rent/",
+            highlights: "Brand-new 2026 renovation, luxury finishes, 2-car garage (extremely rare in NW DC)"
+        },
+        {
+            n: 14, lat: 38.8620, lng: -77.0590,
+            address: "Avalon at Arlington Square", type: "Townhome", hood: "Crystal City, Arlington VA",
+            ws: 88, bd: "3/varies", sqft: "~1,200", rent: "$3,200–$3,930", ppsf: "$2.67",
+            parking: "Included", url: "https://www.apartments.com/avalon-at-arlington-square-arlington-va/321zmzg/",
+            highlights: "Renovated townhomes, private patios, quartz countertops, near Amazon HQ2 + Metro"
+        },
+        {
+            n: 15, lat: 38.8745, lng: -77.0035,
+            address: "Harlow Navy Yard", type: "Townhome", hood: "Navy Yard, DC",
+            ws: 84, bd: "3/varies", sqft: "~1,200", rent: "$3,500–$3,930", ppsf: "$2.92",
+            parking: "Garage available", url: "https://harlowdc.com/",
+            highlights: "Luxury community with townhomes, near Nationals Park + The Yards, brand new"
+        },
+        {
+            n: 16, lat: 38.8825, lng: -77.1715,
+            address: "Pearson Square", type: "Apartment", hood: "Falls Church, VA",
+            ws: 89, bd: "3+Den/2", sqft: "1,948", rent: "$3,020", ppsf: "$1.55",
+            parking: "Garage + bike storage", url: "https://www.apartments.com/pearson-square-falls-church-va/ge3k8dw/",
+            highlights: "Nearly 2000 sqft for ~$3K, East Falls Church Metro, top-rated schools"
+        },
+        {
+            n: 17, lat: 38.9945, lng: -77.0310,
+            address: "Colesville Towers", type: "Apartment", hood: "Silver Spring, MD",
+            ws: 87, bd: "3/2", sqft: "1,234", rent: "$2,363", ppsf: "$1.91",
+            parking: "Garage", url: "https://www.apartments.com/colesville-towers-apartments-silver-spring-md/f6zf0qr/",
+            highlights: "ALL UTILITIES INCLUDED, Silver Spring Metro (Red Line), restaurants + nightlife"
+        }
+    ];
+
+    listings.forEach(l => {
+        const color = colors[l.type] || '#666';
+        const icon = makeNumberedIcon(color, l.n);
+        const popup = `
+            <div class="popup-content">
+                <h3>#${l.n} — ${l.address}</h3>
+                ${badge(l.type)}
+                <div class="rent">${l.rent}/mo</div>
+                <div class="details">
+                    <div>📍 ${l.hood} · <span class="walkscore">Walk Score ${l.ws}</span></div>
+                    <div>🛏 ${l.bd} · 📐 ${l.sqft} sqft · 💲${l.ppsf}/sqft</div>
+                    <div>🅿️ ${l.parking}</div>
+                </div>
+                <div class="highlights">${l.highlights}</div>
+                <div style="margin-top:8px;">
+                    <a href="${l.url}" target="_blank">View Listing →</a>
+                </div>
+            </div>
+        `;
+        L.marker([l.lat, l.lng], { icon }).addTo(map).bindPopup(popup, { maxWidth: 320 });
+    });
+
+    // Fit map to show all markers
+    const bounds = L.latLngBounds(listings.map(l => [l.lat, l.lng]));
+    map.fitBounds(bounds, { padding: [40, 40] });
+    </script>
+</body>
+</html>
