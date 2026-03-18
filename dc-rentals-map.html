@@ -9,7 +9,7 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
         #map { height: 100vh; width: 100%; }
-        .popup-content { max-width: 300px; line-height: 1.5; }
+        .popup-content { max-width: 320px; line-height: 1.5; }
         .popup-content h3 { margin: 0 0 6px 0; font-size: 15px; color: #1a1a1a; }
         .popup-content .type-badge {
             display: inline-block; padding: 2px 8px; border-radius: 12px;
@@ -27,21 +27,34 @@
         .popup-content .highlights { font-size: 12px; color: #666; margin-top: 6px; font-style: italic; }
         .popup-content a { color: #1565c0; text-decoration: none; font-weight: 600; }
         .popup-content a:hover { text-decoration: underline; }
+        .popup-content .verify-note { font-size: 11px; color: #e65100; margin-top: 4px; font-weight: 600; }
         .legend {
             position: absolute; bottom: 30px; left: 10px; z-index: 1000;
             background: white; padding: 12px 16px; border-radius: 8px;
             box-shadow: 0 2px 12px rgba(0,0,0,0.15); font-size: 12px;
+            max-height: 80vh; overflow-y: auto;
         }
         .legend h4 { margin: 0 0 8px 0; font-size: 13px; }
         .legend-item { display: flex; align-items: center; margin: 4px 0; }
         .legend-dot { width: 12px; height: 12px; border-radius: 50%; margin-right: 8px; border: 2px solid white; box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
+        .legend-rect { width: 12px; height: 12px; margin-right: 8px; border: 1px solid rgba(0,0,0,0.2); }
+        .legend-sep { border-top: 1px solid #eee; margin: 6px 0; }
         .info-panel {
             position: absolute; top: 10px; right: 10px; z-index: 1000;
             background: white; padding: 12px 16px; border-radius: 8px;
-            box-shadow: 0 2px 12px rgba(0,0,0,0.15); font-size: 13px; max-width: 220px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.15); font-size: 13px; max-width: 240px;
         }
         .info-panel h3 { margin: 0 0 4px 0; font-size: 15px; }
         .info-panel p { margin: 0; color: #666; font-size: 12px; }
+        .info-panel .highlight-count { color: #d4a017; font-weight: 700; }
+        .filter-panel {
+            position: absolute; top: 10px; left: 50%; transform: translateX(-50%); z-index: 1000;
+            background: white; padding: 8px 16px; border-radius: 8px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.15); font-size: 12px;
+            display: flex; gap: 12px; align-items: center;
+        }
+        .filter-panel label { cursor: pointer; display: flex; align-items: center; gap: 4px; }
+        .filter-panel input[type=checkbox] { cursor: pointer; }
     </style>
 </head>
 <body>
@@ -51,12 +64,27 @@
         <div class="legend-item"><div class="legend-dot" style="background:#2e7d32;"></div> Rowhouse</div>
         <div class="legend-item"><div class="legend-dot" style="background:#1565c0;"></div> Townhouse</div>
         <div class="legend-item"><div class="legend-dot" style="background:#e65100;"></div> Condo</div>
-        <div class="legend-item"><div class="legend-dot" style="background:#7b1fa2;"></div> Townhome (managed)</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#7b1fa2;"></div> Townhome</div>
         <div class="legend-item"><div class="legend-dot" style="background:#c62828;"></div> Apartment</div>
+        <div class="legend-sep"></div>
+        <h4>Zones</h4>
+        <div class="legend-item"><div class="legend-rect" style="background:rgba(211,47,47,0.15);"></div> Avoid Zone</div>
+        <div class="legend-item"><div class="legend-rect" style="background:rgba(255,152,0,0.12);"></div> Caution Zone</div>
+        <div class="legend-item"><div class="legend-rect" style="background:rgba(76,175,80,0.08);"></div> Target Neighborhood</div>
+        <div class="legend-sep"></div>
+        <div class="legend-item">⭐ = Highlighted Pick</div>
     </div>
     <div class="info-panel">
         <h3>🏠 DC Metro Rentals</h3>
-        <p>Walk Score 80+ · 3BR+ · 1000+ sqft<br>17 listings · March 2026<br>Click markers for details</p>
+        <p>Walk Score 80+ · 3BR+ · 1000+ sqft<br>
+        22 listings · <span class="highlight-count">5 ⭐ highlights</span><br>
+        March 2026 · Updated daily<br>
+        Click markers for details</p>
+    </div>
+    <div class="filter-panel">
+        <label><input type="checkbox" id="toggle-zones" checked> Zones</label>
+        <label><input type="checkbox" id="toggle-highlights" checked> ⭐ Only</label>
+        <label><input type="checkbox" id="toggle-all" checked> All Listings</label>
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -80,22 +108,6 @@
         return `<span class="type-badge ${cls}">${type}</span>`;
     }
 
-    function makeIcon(color) {
-        return L.divIcon({
-            className: '',
-            html: `<div style="
-                width: 28px; height: 28px; border-radius: 50%;
-                background: ${color}; border: 3px solid white;
-                box-shadow: 0 2px 6px rgba(0,0,0,0.35);
-                display: flex; align-items: center; justify-content: center;
-                color: white; font-size: 12px; font-weight: 700;
-            "></div>`,
-            iconSize: [28, 28],
-            iconAnchor: [14, 14],
-            popupAnchor: [0, -16]
-        });
-    }
-
     function makeNumberedIcon(color, num) {
         return L.divIcon({
             className: '',
@@ -112,133 +124,298 @@
         });
     }
 
+    function makeStarIcon(color) {
+        return L.divIcon({
+            className: '',
+            html: `<div style="
+                width: 36px; height: 36px; border-radius: 50%;
+                background: ${color}; border: 3px solid #d4a017;
+                box-shadow: 0 2px 8px rgba(212,160,23,0.5), 0 2px 6px rgba(0,0,0,0.35);
+                display: flex; align-items: center; justify-content: center;
+                color: white; font-size: 16px; font-weight: 700;
+            ">⭐</div>`,
+            iconSize: [36, 36],
+            iconAnchor: [18, 18],
+            popupAnchor: [0, -20]
+        });
+    }
+
+    // ======== EXCLUSION ZONES ========
+    const zoneLayer = L.layerGroup().addTo(map);
+
+    // Avoid: East of Lincoln Park / 13th St NE — Kingman Park east, RFK area
+    const avoidEastLincoln = L.polygon([
+        [38.9010, -76.9830], // NW corner (roughly 13th St NE / East Capitol)
+        [38.9010, -76.9650], // NE corner (beyond RFK)
+        [38.8830, -76.9650], // SE corner
+        [38.8830, -76.9830], // SW corner
+    ], {
+        color: '#d32f2f', fillColor: '#d32f2f', fillOpacity: 0.12,
+        weight: 2, dashArray: '6,4'
+    }).addTo(zoneLayer).bindPopup('<b>🚫 Avoid Zone</b><br>East of Lincoln Park / 13th St NE<br>Kingman Park east, RFK Stadium area');
+
+    // Avoid: NY Ave corridor (high crime)
+    const avoidNYAve = L.polygon([
+        [38.9050, -76.9900], // W end near NY Ave & Florida Ave
+        [38.9120, -76.9750], // E along NY Ave
+        [38.9080, -76.9700], // SE
+        [38.8990, -76.9850], // SW
+    ], {
+        color: '#d32f2f', fillColor: '#d32f2f', fillOpacity: 0.12,
+        weight: 2, dashArray: '6,4'
+    }).addTo(zoneLayer).bindPopup('<b>🚫 Avoid Zone</b><br>NY Ave corridor<br>Higher crime area');
+
+    // Caution: Shaw core (some blocks)
+    const cautionShaw = L.polygon([
+        [38.9130, -77.0220], // NW
+        [38.9130, -77.0120], // NE
+        [38.9050, -77.0120], // SE
+        [38.9050, -77.0220], // SW
+    ], {
+        color: '#ff9800', fillColor: '#ff9800', fillOpacity: 0.08,
+        weight: 2, dashArray: '4,4'
+    }).addTo(zoneLayer).bindPopup('<b>⚠️ Caution Zone</b><br>Shaw core — some blocks<br>Verify block-level safety');
+
+    // Avoid: Navy Yard (dealbreaker — "too gentrified, no soul")
+    const avoidNavyYard = L.polygon([
+        [38.8810, -77.0050], // NW
+        [38.8810, -76.9900], // NE
+        [38.8700, -76.9900], // SE
+        [38.8700, -77.0050], // SW
+    ], {
+        color: '#d32f2f', fillColor: '#d32f2f', fillOpacity: 0.10,
+        weight: 2, dashArray: '6,4'
+    }).addTo(zoneLayer).bindPopup('<b>🚫 Avoid Zone</b><br>Navy Yard<br>"Too gentrified, no soul"');
+
+    // Target neighborhoods (light green outlines)
+    const targetCapitolHill = L.polygon([
+        [38.8960, -77.0050], [38.8960, -76.9830],
+        [38.8780, -76.9830], [38.8780, -77.0050]
+    ], {
+        color: '#4caf50', fillColor: '#4caf50', fillOpacity: 0.05,
+        weight: 2
+    }).addTo(zoneLayer).bindPopup('<b>✅ Target: Capitol Hill</b><br>Best inventory for 3BR');
+
+    const targetLoganDupont = L.polygon([
+        [38.9180, -77.0400], [38.9180, -77.0200],
+        [38.9050, -77.0200], [38.9050, -77.0400]
+    ], {
+        color: '#4caf50', fillColor: '#4caf50', fillOpacity: 0.05,
+        weight: 2
+    }).addTo(zoneLayer).bindPopup('<b>✅ Target: Dupont / Logan Circle</b><br>Walk Score 95+, premium pricing');
+
+    // Lincoln Park marker (reference point)
+    L.marker([38.8900, -76.9860], {
+        icon: L.divIcon({
+            className: '',
+            html: `<div style="background:white;border:2px solid #333;border-radius:4px;padding:2px 6px;font-size:11px;font-weight:600;white-space:nowrap;">🌳 Lincoln Park</div>`,
+            iconSize: [100, 24], iconAnchor: [50, 12]
+        })
+    }).addTo(zoneLayer);
+
+    // 13th St NE reference line
+    L.polyline([
+        [38.9020, -76.9835],
+        [38.8820, -76.9835]
+    ], {
+        color: '#d32f2f', weight: 3, dashArray: '8,6', opacity: 0.7
+    }).addTo(zoneLayer).bindPopup('<b>13th St NE</b><br>Avoid east of this line');
+
+
+    // ======== LISTINGS ========
+    const highlightLayer = L.layerGroup().addTo(map);
+    const regularLayer = L.layerGroup().addTo(map);
+
+    // Original research listings (numbered)
     const listings = [
         {
             n: 1, lat: 38.8925, lng: -76.9868,
             address: "514 14th St NE", type: "Rowhouse", hood: "Kingman Park, DC",
             ws: 85, bd: "3/1.5", sqft: "1,392", rent: "$2,695", ppsf: "$1.94",
-            parking: "Street (ample)", url: "https://www.redfin.com/DC/Washington/514-14th-St-NE-20002/home/9912927",
-            highlights: "Updated kitchen & baths, private backyard, fireplace, walkable to H Street restaurants, near Stadium-Armory Metro"
+            parking: "Street (ample)",
+            highlights: "Updated kitchen & baths, private backyard, fireplace. ⚠️ Near avoid zone (14th St NE)",
+            star: false, verify: "Near east-of-Lincoln-Park avoid zone"
         },
         {
             n: 2, lat: 38.8940, lng: -76.9785,
             address: "246 Division Ave NE", type: "Townhouse", hood: "Kingman Park, DC",
             ws: 80, bd: "3/3", sqft: "1,200", rent: "$2,500", ppsf: "$2.08",
-            parking: "Street; landlord pays internet", url: "https://www.apartments.com/246-division-ave-ne-washington-dc/0tghlc3/",
-
-            highlights: "Most affordable option, 3 full baths, landlord covers internet + lawn maintenance"
+            parking: "Street; landlord pays internet",
+            highlights: "Most affordable. ⚠️ Inside avoid zone — east of 13th St NE",
+            star: false, verify: "Inside avoid zone (east of 13th St NE)"
         },
         {
             n: 3, lat: 38.9415, lng: -77.0320,
             address: "310 Taylor St NW", type: "Rowhouse", hood: "Petworth, DC",
             ws: 85, bd: "3/2.5", sqft: "1,728", rent: "$3,599", ppsf: "$2.08",
-            parking: "Off-street included", url: "https://www.apartments.com/310-taylor-st-nw-washington-dc/07f6zk1/",
-            highlights: "Spacious classic Petworth rowhouse, 13-min to Georgia Ave-Petworth Metro, pets OK"
+            parking: "Off-street included",
+            highlights: "Spacious Petworth rowhouse, 13-min to Georgia Ave-Petworth Metro, pets OK",
+            star: false
         },
         {
             n: 4, lat: 38.9420, lng: -77.0335,
             address: "1419 Upshur St NW #1", type: "Condo", hood: "Petworth, DC",
             ws: 85, bd: "3/2.5", sqft: "1,164", rent: "$3,599", ppsf: "$3.09",
-            parking: "Outdoor parking included", url: "https://www.apartments.com/1419-upshur-st-nw-washington-dc/yl5k5zr/",
-            highlights: "Modern condo, fireplace, extra storage, in-unit laundry, near Petworth Metro"
+            parking: "Outdoor parking included",
+            highlights: "Modern condo, fireplace, in-unit laundry, near Petworth Metro",
+            star: false
         },
         {
             n: 5, lat: 38.9435, lng: -77.0325,
             address: "4115 5th St NW", type: "Rowhouse", hood: "Petworth, DC",
             ws: 85, bd: "3/2.5", sqft: "1,650", rent: "$3,750", ppsf: "$2.27",
-            parking: "Street parking", url: "https://www.apartments.com/4115-5th-st-nw-washington-dc/g7cc0jx/",
-            highlights: "Exposed brick, fireplace, natural light, in-unit laundry, near Petworth Metro"
+            parking: "Street parking",
+            highlights: "Exposed brick, fireplace, natural light, in-unit laundry",
+            star: false
         },
         {
             n: 6, lat: 38.9445, lng: -77.0340,
             address: "4718 15th St NW", type: "Rowhouse", hood: "Petworth, DC",
             ws: 85, bd: "3/2", sqft: "1,650", rent: "$3,750", ppsf: "$2.27",
-            parking: "2 spaces included", url: "https://www.corcoran.com/listing/for-rent/4718-15th-st-nw-washington-dc-20011/101303649/regionId/141",
-            highlights: "Historic 1920 rowhouse, 4 levels, front porch, near Georgia Ave-Petworth Metro"
+            parking: "2 spaces included",
+            highlights: "Historic 1920 rowhouse, 4 levels, front porch, near Georgia Ave Metro",
+            star: false
         },
         {
             n: 7, lat: 38.8838, lng: -76.9955,
             address: "216 9th St SE", type: "Townhouse", hood: "Capitol Hill, DC",
             ws: 89, bd: "3/2.5", sqft: "~1,300", rent: "$3,800", ppsf: "$2.92",
-            parking: "Street (RPP zone)", url: "https://www.apartments.com/216-9th-st-se-washington-dc/nvvc2gq/",
-            highlights: "2 blocks from Eastern Market Metro, hardwood floors, cathedral ceilings, chef's kitchen"
+            parking: "Street (RPP zone)",
+            highlights: "2 blocks from Eastern Market Metro, hardwood, cathedral ceilings, chef's kitchen",
+            star: false
         },
         {
             n: 8, lat: 38.8768, lng: -76.9935,
             address: "1122 K St SE", type: "Townhouse", hood: "Capitol Hill/Navy Yard, DC",
             ws: 87, bd: "3/2.5", sqft: "1,540", rent: "$3,900", ppsf: "$2.53",
-            parking: "Street parking", url: "https://www.redfin.com/DC/Washington/1122-K-St-SE-20003/home/9909532",
-            highlights: "Near Nationals Park and Navy Yard waterfront, walkable to restaurants + Metro"
+            parking: "Street parking",
+            highlights: "Near Navy Yard waterfront. ⚠️ Borders Navy Yard avoid zone",
+            star: false, verify: "Near Navy Yard dealbreaker zone"
         },
         {
             n: 9, lat: 38.8890, lng: -76.9985,
             address: "833 6th St NE", type: "Rowhouse", hood: "Capitol Hill, DC",
             ws: 89, bd: "3/1.5", sqft: "1,162", rent: "$4,100", ppsf: "$3.53",
-            parking: "Street parking", url: "https://www.zillow.com/homedetails/833-6th-St-NE-Washington-DC-20002/416934_zpid/",
-            highlights: "Classic Capitol Hill row, renovated, near Eastern Market, H Street, multiple Metros"
+            parking: "Street parking",
+            highlights: "Classic Capitol Hill row, renovated, near Eastern Market, H Street",
+            star: false
         },
         {
             n: 10, lat: 38.8048, lng: -77.0470,
             address: "316 S Columbus St", type: "Townhouse", hood: "Old Town Alexandria, VA",
             ws: 83, bd: "3/1.5", sqft: "1,098", rent: "$4,280", ppsf: "$3.90",
-            parking: "Off-street included", url: "https://www.trulia.com/p/va/alexandria/316-s-columbus-st-alexandria-va-22314--1049060189",
-            highlights: "Historic Old Town, brick courtyard, fireplace, hardwood, W/D, walk to King St Metro + waterfront"
+            parking: "Off-street included",
+            highlights: "Historic Old Town, brick courtyard, fireplace, walk to King St Metro + waterfront",
+            star: false
         },
         {
             n: 11, lat: 38.9095, lng: -77.0225,
             address: "1003 P St NW, Unit A", type: "Townhouse", hood: "Shaw/Logan Circle, DC",
             ws: 92, bd: "3/2", sqft: "1,300", rent: "$4,700", ppsf: "$3.62",
-            parking: "Street (RPP zone)", url: "https://www.apartments.com/1003-p-st-nw-washington-dc/vme9kyg/",
-            highlights: "One of DC's most walkable neighborhoods, steps from U Street Metro, incredible restaurants"
+            parking: "Street (RPP zone)",
+            highlights: "Steps from U Street Metro, incredible restaurants. ⚠️ Near Shaw caution zone",
+            star: false, verify: "Borders Shaw caution zone — verify block"
         },
         {
             n: 12, lat: 38.9168, lng: -77.0125,
             address: "2607 1st St NW", type: "Townhouse", hood: "LeDroit Park, DC",
             ws: 88, bd: "3/2", sqft: "~1,400", rent: "$5,000", ppsf: "$3.57",
-            parking: "Garage included", url: "https://www.homes.com/washington-dc/homes-for-rent/p/2607-1st-st-nw-washington-dc-20001/",
-            highlights: "New construction, in-unit laundry, garage parking (rare!), near Shaw-Howard Metro"
+            parking: "Garage included",
+            highlights: "New construction, garage parking (rare!), near Shaw-Howard Metro",
+            star: false
         },
         {
             n: 13, lat: 38.9298, lng: -77.0295,
             address: "3015 13th St NW", type: "Townhouse", hood: "Columbia Heights, DC",
             ws: 93, bd: "3/3", sqft: "~1,600", rent: "$5,950", ppsf: "$3.72",
-            parking: "2-car private garage", url: "https://www.trulia.com/home/3015-13th-st-nw-washington-dc-20009-473374",
-            highlights: "Brand-new 2026 renovation, luxury finishes, 2-car garage (extremely rare in NW DC)"
+            parking: "2-car private garage",
+            highlights: "Brand-new 2026 renovation, luxury finishes, 2-car garage (extremely rare in NW DC)",
+            star: false
         },
         {
             n: 14, lat: 38.8620, lng: -77.0590,
             address: "Avalon at Arlington Square", type: "Townhome", hood: "Crystal City, Arlington VA",
             ws: 88, bd: "3/varies", sqft: "~1,200", rent: "$3,200–$3,930", ppsf: "$2.67",
-            parking: "Included", url: "https://www.apartments.com/avalon-at-arlington-square-arlington-va/321zmzg/",
-            highlights: "Renovated townhomes, private patios, quartz countertops, near Amazon HQ2 + Metro"
+            parking: "Included",
+            highlights: "Renovated townhomes, private patios, near Amazon HQ2 + Metro",
+            star: false
         },
         {
             n: 15, lat: 38.8745, lng: -77.0035,
             address: "Harlow Navy Yard", type: "Townhome", hood: "Navy Yard, DC",
             ws: 84, bd: "3/varies", sqft: "~1,200", rent: "$3,500–$3,930", ppsf: "$2.92",
-            parking: "Garage available", url: "https://harlowdc.com/",
-            highlights: "Luxury community with townhomes, near Nationals Park + The Yards, brand new"
+            parking: "Garage available",
+            highlights: "Luxury townhomes, near Nationals Park. ⚠️ In Navy Yard avoid zone",
+            star: false, verify: "Inside Navy Yard dealbreaker zone"
         },
         {
             n: 16, lat: 38.8825, lng: -77.1715,
             address: "Pearson Square", type: "Apartment", hood: "Falls Church, VA",
             ws: 89, bd: "3+Den/2", sqft: "1,948", rent: "$3,020", ppsf: "$1.55",
-            parking: "Garage + bike storage", url: "https://www.apartments.com/pearson-square-falls-church-va/ge3k8dw/",
-            highlights: "Nearly 2000 sqft for ~$3K, East Falls Church Metro, top-rated schools"
+            parking: "Garage + bike storage",
+            highlights: "Nearly 2000 sqft for ~$3K, East Falls Church Metro, top-rated schools",
+            star: false
         },
         {
             n: 17, lat: 38.9945, lng: -77.0310,
             address: "Colesville Towers", type: "Apartment", hood: "Silver Spring, MD",
             ws: 87, bd: "3/2", sqft: "1,234", rent: "$2,363", ppsf: "$1.91",
-            parking: "Garage", url: "https://www.apartments.com/colesville-towers-apartments-silver-spring-md/f6zf0qr/",
-            highlights: "ALL UTILITIES INCLUDED, Silver Spring Metro (Red Line), restaurants + nightlife"
+            parking: "Garage",
+            highlights: "ALL UTILITIES INCLUDED, Silver Spring Metro (Red Line)",
+            star: false
         }
     ];
 
+    // Daily scan highlighted listings (⭐)
+    const highlighted = [
+        {
+            lat: 38.8850, lng: -76.9940,
+            address: "517 11th St SE Unit 1", type: "Townhouse", hood: "Capitol Hill, DC",
+            ws: 92, bd: "3/2", sqft: "~TBD", rent: "$3,475", ppsf: "~",
+            parking: "Street",
+            highlights: "Renovated, W/D in-unit, hardwood, high ceilings, Jacuzzi tubs, shared rooftop (1 other unit), water incl. 1ST MONTH FREE (~$3,186 effective). Walk to Eastern Market & Union Station. Cats only.",
+            star: true, found: "Mar 14"
+        },
+        {
+            lat: 38.8815, lng: -76.9855,
+            address: "730 15th St SE #2", type: "Rowhouse", hood: "Capitol Hill, DC",
+            ws: 90, bd: "3/1", sqft: "~TBD", rent: "$3,000", ppsf: "~",
+            parking: "Off-street rear",
+            highlights: "Brazilian hardwood, granite, original chandeliers, W/D in-unit, pets welcome. 3-min to Potomac Ave Metro. BEST VALUE — only 1 bathroom.",
+            star: true, found: "Mar 15"
+        },
+        {
+            lat: 38.8960, lng: -76.9830,
+            address: "707 15th St NE", type: "Townhome", hood: "Trinidad/H St NE, DC",
+            ws: 95, bd: "3/1.5", sqft: "1,800", rent: "$2,750", ppsf: "$1.53",
+            parking: "Street",
+            highlights: "BEST $/sqft IN SEARCH ($1.53). Hardwood, skylight, gas range, W/D, fenced yard, pets. Near H St dining + NoMa Metro.",
+            star: true, found: "Mar 16",
+            verify: "Kingman Park/Trinidad border — western edge (H St side). Verify block safety."
+        },
+        {
+            lat: 38.9055, lng: -77.0155,
+            address: "1144 1st St NW", type: "Townhouse", hood: "Mt Vernon Triangle/NoMa, DC",
+            ws: 92, bd: "3/1.5", sqft: "1,057", rent: "$3,500", ppsf: "$3.31",
+            parking: "2 off-street spaces (!)",
+            highlights: "TWO parking spots (huge!), W/D, fenced patio, new LVP + paint. Walk to 3 metros. BEST VALUE WITH PARKING. No pets. 1,057 sqft (barely over min).",
+            star: true, found: "Mar 17"
+        },
+        {
+            lat: 38.8867, lng: -76.9960,
+            address: "1351 A St NE", type: "Townhouse", hood: "Capitol Hill, DC",
+            ws: 85, bd: "3/2.5", sqft: "1,590", rent: "$4,900", ppsf: "$3.08",
+            parking: "Street",
+            highlights: "1917 townhouse with character, fenced yard, near Stadium-Armory Metro. At top of budget.",
+            star: true, found: "Mar 13"
+        }
+    ];
+
+    // Render all listings
     listings.forEach(l => {
         const color = colors[l.type] || '#666';
         const icon = makeNumberedIcon(color, l.n);
-        const popup = `
+        let popup = `
             <div class="popup-content">
                 <h3>#${l.n} — ${l.address}</h3>
                 ${badge(l.type)}
@@ -249,17 +426,55 @@
                     <div>🅿️ ${l.parking}</div>
                 </div>
                 <div class="highlights">${l.highlights}</div>
-                <div style="margin-top:8px;">
-                    <a href="${l.url}" target="_blank">View Listing →</a>
-                </div>
+                ${l.verify ? `<div class="verify-note">⚠️ ${l.verify}</div>` : ''}
             </div>
         `;
-        L.marker([l.lat, l.lng], { icon }).addTo(map).bindPopup(popup, { maxWidth: 320 });
+        L.marker([l.lat, l.lng], { icon }).addTo(regularLayer).bindPopup(popup, { maxWidth: 340 });
     });
 
-    // Fit map to show all markers
-    const bounds = L.latLngBounds(listings.map(l => [l.lat, l.lng]));
-    map.fitBounds(bounds, { padding: [40, 40] });
+    // Render highlighted listings (⭐)
+    highlighted.forEach(l => {
+        const color = colors[l.type] || '#666';
+        const icon = makeStarIcon(color);
+        let popup = `
+            <div class="popup-content">
+                <h3>⭐ ${l.address}</h3>
+                ${badge(l.type)}
+                <div class="rent">${l.rent}/mo</div>
+                <div class="details">
+                    <div>📍 ${l.hood} · <span class="walkscore">Walk Score ${l.ws}</span></div>
+                    <div>🛏 ${l.bd} · 📐 ${l.sqft} sqft · 💲${l.ppsf}/sqft</div>
+                    <div>🅿️ ${l.parking}</div>
+                    <div>📅 Found: ${l.found}</div>
+                </div>
+                <div class="highlights">${l.highlights}</div>
+                ${l.verify ? `<div class="verify-note">⚠️ ${l.verify}</div>` : ''}
+            </div>
+        `;
+        L.marker([l.lat, l.lng], { icon }).addTo(highlightLayer).bindPopup(popup, { maxWidth: 340 });
+    });
+
+    // Fit bounds to all markers
+    const allPoints = [
+        ...listings.map(l => [l.lat, l.lng]),
+        ...highlighted.map(l => [l.lat, l.lng])
+    ];
+    map.fitBounds(L.latLngBounds(allPoints), { padding: [40, 40] });
+
+    // Filter controls
+    document.getElementById('toggle-zones').addEventListener('change', function() {
+        this.checked ? map.addLayer(zoneLayer) : map.removeLayer(zoneLayer);
+    });
+    document.getElementById('toggle-highlights').addEventListener('change', function() {
+        if (this.checked) {
+            map.addLayer(highlightLayer);
+        } else {
+            map.removeLayer(highlightLayer);
+        }
+    });
+    document.getElementById('toggle-all').addEventListener('change', function() {
+        this.checked ? map.addLayer(regularLayer) : map.removeLayer(regularLayer);
+    });
     </script>
 </body>
 </html>
