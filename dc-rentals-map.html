@@ -67,11 +67,11 @@
         .fb-saved { font-size: 11px; color: #4caf50; font-weight: 600; }
         .sync-btn {
             position: absolute; bottom: 30px; right: 10px; z-index: 1000;
-            background: #25D366; color: white; border: none; border-radius: 12px;
+            background: #1565c0; color: white; border: none; border-radius: 12px;
             padding: 10px 16px; font-size: 13px; font-weight: 600; cursor: pointer;
             box-shadow: 0 2px 12px rgba(0,0,0,0.2); display: none;
         }
-        .sync-btn:hover { background: #1ebe57; }
+        .sync-btn:hover { background: #1976d2; }
         .sync-badge {
             background: #d32f2f; color: white; border-radius: 50%; padding: 1px 6px;
             font-size: 11px; margin-left: 6px;
@@ -328,7 +328,7 @@
         const btn = document.getElementById('sync-btn');
         if (unsent.length > 0) {
             btn.style.display = 'block';
-            btn.innerHTML = `💬 Send Feedback<span class="sync-badge">${unsent.length}</span>`;
+            btn.innerHTML = `📧 Send Feedback<span class="sync-badge">${unsent.length}</span>`;
         } else {
             btn.style.display = 'none';
         }
@@ -348,9 +348,10 @@
         unsent.forEach(([addr]) => { fb[addr].sent = true; });
         localStorage.setItem(FB_KEY, JSON.stringify(fb));
         updateSyncBtn();
-        // Open WhatsApp with pre-filled message
-        const encoded = encodeURIComponent(msg);
-        window.open(`https://wa.me/18029896729?text=${encoded}`, '_blank');
+        // Open email with pre-filled feedback
+        const subject = encodeURIComponent('🏠 DC Rental Feedback');
+        const body = encodeURIComponent(msg);
+        window.location.href = `mailto:teebot.by.teejay@gmail.com?subject=${subject}&body=${body}`;
     }
 
     // ======== LISTINGS ========
