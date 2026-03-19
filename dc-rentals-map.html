@@ -187,6 +187,24 @@
         weight: 2, dashArray: '6,4'
     }).addTo(zoneLayer).bindPopup('<b>🚫 Avoid Zone</b><br>Navy Yard<br>"Too gentrified, no soul"');
 
+    // Avoid: 14th & U St block (too loud)
+    const avoid14thU = L.polygon([
+        [38.9185, -77.0340], [38.9185, -77.0290],
+        [38.9140, -77.0290], [38.9140, -77.0340]
+    ], {
+        color: '#d32f2f', fillColor: '#d32f2f', fillOpacity: 0.12,
+        weight: 2, dashArray: '6,4'
+    }).addTo(zoneLayer).bindPopup('<b>🚫 Avoid Zone</b><br>14th & U St block<br>Too loud');
+
+    // Avoid: Chinatown block (H & 7th St — too loud)
+    const avoidChinatown = L.polygon([
+        [38.9010, -77.0240], [38.9010, -77.0180],
+        [38.8970, -77.0180], [38.8970, -77.0240]
+    ], {
+        color: '#d32f2f', fillColor: '#d32f2f', fillOpacity: 0.12,
+        weight: 2, dashArray: '6,4'
+    }).addTo(zoneLayer).bindPopup('<b>🚫 Avoid Zone</b><br>Chinatown (H & 7th St)<br>Too loud');
+
     // Target neighborhoods (light green outlines)
     const targetCapitolHill = L.polygon([
         [38.8960, -77.0050], [38.8960, -76.9830],
@@ -196,13 +214,21 @@
         weight: 2
     }).addTo(zoneLayer).bindPopup('<b>✅ Target: Capitol Hill</b><br>Best inventory for 3BR');
 
-    const targetLoganDupont = L.polygon([
-        [38.9180, -77.0400], [38.9180, -77.0200],
-        [38.9050, -77.0200], [38.9050, -77.0400]
+    const targetDupont = L.polygon([
+        [38.9150, -77.0500], [38.9150, -77.0380],
+        [38.9070, -77.0380], [38.9070, -77.0500]
+    ], {
+        color: '#2e7d32', fillColor: '#4caf50', fillOpacity: 0.10,
+        weight: 3
+    }).addTo(zoneLayer).bindPopup('<b>💚 LOVE: Dupont Circle</b><br>Walk Score 97 · Teejay\'s favorite');
+
+    const targetLogan = L.polygon([
+        [38.9180, -77.0350], [38.9180, -77.0200],
+        [38.9100, -77.0200], [38.9100, -77.0350]
     ], {
         color: '#4caf50', fillColor: '#4caf50', fillOpacity: 0.05,
         weight: 2
-    }).addTo(zoneLayer).bindPopup('<b>✅ Target: Dupont / Logan Circle</b><br>Walk Score 95+, premium pricing');
+    }).addTo(zoneLayer).bindPopup('<b>✅ Target: Logan Circle</b><br>Walk Score 95+, premium pricing');
 
     // Lincoln Park marker (reference point)
     L.marker([38.8900, -76.9860], {
