@@ -55,6 +55,27 @@
         }
         .filter-panel label { cursor: pointer; display: flex; align-items: center; gap: 4px; }
         .filter-panel input[type=checkbox] { cursor: pointer; }
+        .fb-row { display: flex; gap: 6px; align-items: center; margin-top: 8px; }
+        .fb-btn { border: none; border-radius: 6px; padding: 4px 10px; cursor: pointer; font-size: 16px; opacity: 0.6; transition: all 0.15s; }
+        .fb-btn:hover { opacity: 1; transform: scale(1.15); }
+        .fb-btn.active { opacity: 1; outline: 2px solid #333; }
+        .fb-btn.up { background: #e8f5e9; }
+        .fb-btn.down { background: #fce4ec; }
+        .fb-text { width: 100%; padding: 4px 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 12px; font-family: inherit; resize: none; }
+        .fb-send { background: #1b5e20; color: white; border: none; border-radius: 6px; padding: 4px 10px; font-size: 11px; cursor: pointer; font-weight: 600; }
+        .fb-send:hover { background: #2e7d32; }
+        .fb-saved { font-size: 11px; color: #4caf50; font-weight: 600; }
+        .sync-btn {
+            position: absolute; bottom: 30px; right: 10px; z-index: 1000;
+            background: #25D366; color: white; border: none; border-radius: 12px;
+            padding: 10px 16px; font-size: 13px; font-weight: 600; cursor: pointer;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.2); display: none;
+        }
+        .sync-btn:hover { background: #1ebe57; }
+        .sync-badge {
+            background: #d32f2f; color: white; border-radius: 50%; padding: 1px 6px;
+            font-size: 11px; margin-left: 6px;
+        }
     </style>
 </head>
 <body>
@@ -87,6 +108,7 @@
         <label><input type="checkbox" id="toggle-all" checked> All Listings</label>
     </div>
 
+    <button id="sync-btn" class="sync-btn" onclick="syncFeedback()" style="display:none;">💬 Send Feedback</button>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
     const map = L.map('map').setView([38.905, -77.035], 12);
@@ -247,6 +269,89 @@
         color: '#d32f2f', weight: 3, dashArray: '8,6', opacity: 0.7
     }).addTo(zoneLayer).bindPopup('<b>13th St NE</b><br>Avoid east of this line');
 
+
+    // ======== FEEDBACK SYSTEM ========
+    const FB_KEY = 'dc-rentals-feedback';
+    function getFeedback() { return JSON.parse(localStorage.getItem(FB_KEY) || '{}'); }
+    function saveFeedback(addr, vote, comment) {
+        const fb = getFeedback();
+        fb[addr] = { vote, comment, ts: new Date().toISOString(), sent: false };
+        localStorage.setItem(FB_KEY, JSON.stringify(fb));
+        updateSyncBtn();
+    }
+    function feedbackHtml(addr) {
+        const fb = getFeedback()[addr];
+        const upActive = fb?.vote === 'up' ? 'active' : '';
+        const downActive = fb?.vote === 'down' ? 'active' : '';
+        const comment = fb?.comment || '';
+        const id = addr.replace(/[^a-zA-Z0-9]/g, '_');
+        return `
+            <div class="fb-row" style="flex-wrap:wrap;">
+                <button class="fb-btn up ${upActive}" onclick="window._fbVote('${id}','${addr}','up')">👍</button>
+                <button class="fb-btn down ${downActive}" onclick="window._fbVote('${id}','${addr}','down')">👎</button>
+                <span id="fb-status-${id}" class="fb-saved">${fb ? (fb.sent ? '✓ sent' : '✓ saved') : ''}</span>
+            </div>
+            <div style="margin-top:4px;">
+                <textarea class="fb-text" id="fb-text-${id}" rows="2" placeholder="Why? (optional)">${comment}</textarea>
+            </div>
+            <div style="margin-top:4px;">
+                <button class="fb-send" onclick="window._fbSave('${id}','${addr}')">Save Feedback</button>
+            </div>
+        `;
+    }
+    window._fbVote = function(id, addr, vote) {
+        const fb = getFeedback();
+        const existing = fb[addr] || {};
+        existing.vote = existing.vote === vote ? null : vote; // toggle
+        fb[addr] = { ...existing, ts: new Date().toISOString(), sent: false };
+        localStorage.setItem(FB_KEY, JSON.stringify(fb));
+        // Update button styles
+        document.querySelectorAll(`#fb-status-${id}`).forEach(el => el.textContent = '');
+        const popup = document.querySelector(`#fb-text-${id}`)?.closest('.popup-content');
+        if (popup) {
+            popup.querySelectorAll('.fb-btn.up').forEach(b => b.classList.toggle('active', existing.vote === 'up'));
+            popup.querySelectorAll('.fb-btn.down').forEach(b => b.classList.toggle('active', existing.vote === 'down'));
+        }
+        updateSyncBtn();
+    };
+    window._fbSave = function(id, addr) {
+        const text = document.getElementById(`fb-text-${id}`)?.value || '';
+        const fb = getFeedback();
+        const existing = fb[addr] || {};
+        saveFeedback(addr, existing.vote || 'up', text);
+        const el = document.getElementById(`fb-status-${id}`);
+        if (el) el.textContent = '✓ saved';
+    };
+    function updateSyncBtn() {
+        const fb = getFeedback();
+        const unsent = Object.entries(fb).filter(([_,v]) => !v.sent && v.vote);
+        const btn = document.getElementById('sync-btn');
+        if (unsent.length > 0) {
+            btn.style.display = 'block';
+            btn.innerHTML = `💬 Send Feedback<span class="sync-badge">${unsent.length}</span>`;
+        } else {
+            btn.style.display = 'none';
+        }
+    }
+    function syncFeedback() {
+        const fb = getFeedback();
+        const unsent = Object.entries(fb).filter(([_,v]) => !v.sent && v.vote);
+        if (unsent.length === 0) return;
+        let msg = '🏠 DC Rental Feedback:\n\n';
+        unsent.forEach(([addr, v]) => {
+            const emoji = v.vote === 'up' ? '👍' : '👎';
+            msg += `${emoji} ${addr}\n`;
+            if (v.comment) msg += `  → ${v.comment}\n`;
+            msg += '\n';
+        });
+        // Mark as sent
+        unsent.forEach(([addr]) => { fb[addr].sent = true; });
+        localStorage.setItem(FB_KEY, JSON.stringify(fb));
+        updateSyncBtn();
+        // Open WhatsApp with pre-filled message
+        const encoded = encodeURIComponent(msg);
+        window.open(`https://wa.me/18029896729?text=${encoded}`, '_blank');
+    }
 
     // ======== LISTINGS ========
     const highlightLayer = L.layerGroup().addTo(map);
@@ -468,6 +573,7 @@
                 <div class="highlights">${l.highlights}</div>
                 ${l.verify ? `<div class="verify-note">⚠️ ${l.verify}</div>` : ''}
                 ${l.urls ? `<div style="margin-top:8px;font-size:13px;">${l.urls.map(u => `<a href="${u.href}" target="_blank" rel="noopener">${u.label}</a>`).join(' · ')}</div>` : ''}
+                ${feedbackHtml(l.address)}
             </div>
         `;
         L.marker([l.lat, l.lng], { icon }).addTo(regularLayer).bindPopup(popup, { maxWidth: 340 });
@@ -491,6 +597,7 @@
                 <div class="highlights">${l.highlights}</div>
                 ${l.verify ? `<div class="verify-note">⚠️ ${l.verify}</div>` : ''}
                 ${l.urls ? `<div style="margin-top:8px;font-size:13px;">${l.urls.map(u => `<a href="${u.href}" target="_blank" rel="noopener">${u.label}</a>`).join(' · ')}</div>` : ''}
+                ${feedbackHtml(l.address)}
             </div>
         `;
         L.marker([l.lat, l.lng], { icon }).addTo(highlightLayer).bindPopup(popup, { maxWidth: 340 });
@@ -517,6 +624,9 @@
     document.getElementById('toggle-all').addEventListener('change', function() {
         this.checked ? map.addLayer(regularLayer) : map.removeLayer(regularLayer);
     });
+
+    // Initialize sync button on load
+    updateSyncBtn();
     </script>
 </body>
 </html>
