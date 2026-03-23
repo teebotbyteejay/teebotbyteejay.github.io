@@ -502,21 +502,59 @@
 </footer>
 
 <script>
+var API_URL = 'http://104.236.27.87:8741';
+
 function handleSearch(e) {
   e.preventDefault();
   var mark = document.getElementById('searchMark').value;
   var desc = document.getElementById('searchDesc').value;
   var results = document.getElementById('searchResults');
-  results.innerHTML = '<p style="color:var(--text-muted);padding:16px;">🔍 Searching ' + (2247 + Math.floor(Math.random()*200)) + ' active filings...</p>';
+  results.innerHTML = '<p style="color:var(--text-muted);padding:16px;">🔍 Searching USPTO filings with AI semantic matching...</p>';
   
-  // Coming soon — show demo results for now
-  setTimeout(function() {
-    results.innerHTML = '<div style="background:white;border:1px solid var(--border);border-radius:var(--radius);padding:24px;">' +
-      '<p style="font-weight:600;margin-bottom:16px;">🚀 Full AI search launching soon!</p>' +
-      '<p style="color:var(--text-muted);font-size:0.95rem;">We\'re finalizing our USPTO data pipeline. Join the waitlist below to get <strong>30 days free</strong> when we launch — and be among the first to search with AI semantic matching.</p>' +
-      '<p style="margin-top:12px;"><a href="#waitlist" style="color:var(--accent);font-weight:600;">→ Join the waitlist</a></p>' +
-      '</div>';
-  }, 1500);
+  fetch(API_URL + '/search', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ brand_name: mark, description: desc })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(data) {
+    if (data.error) {
+      results.innerHTML = '<p style="color:var(--danger);padding:16px;">⚠️ ' + data.error + '</p>';
+      return;
+    }
+    var html = '<div style="margin-bottom:12px;color:var(--text-muted);font-size:0.9rem;">Searched ' + (data.total_filings || 0).toLocaleString() + ' recent USPTO filings</div>';
+    if (!data.results || data.results.length === 0) {
+      html += '<div style="background:white;border:1px solid var(--border);border-radius:var(--radius);padding:24px;">' +
+        '<p style="font-weight:600;">✅ No similar marks found in recent filings</p>' +
+        '<p style="color:var(--text-muted);font-size:0.9rem;margin-top:8px;">This is a good sign! But new trademarks are filed daily. ' +
+        '<a href="#waitlist" style="color:var(--accent);font-weight:600;">Get monitoring alerts →</a></p></div>';
+    } else {
+      html += '<div style="display:flex;flex-direction:column;gap:12px;">';
+      data.results.forEach(function(m) {
+        var sevColors = { high: '#e53e3e', medium: '#d69e2e', low: '#38a169', note: '#718096' };
+        var sevEmoji = { high: '🔴', medium: '🟡', low: '🟢', note: '⚪' };
+        var color = sevColors[m.severity] || '#718096';
+        var emoji = sevEmoji[m.severity] || '⚪';
+        html += '<div style="background:white;border:1px solid var(--border);border-left:4px solid ' + color + ';border-radius:var(--radius);padding:16px;">';
+        html += '<div style="display:flex;justify-content:space-between;align-items:center;">';
+        html += '<strong>' + emoji + ' ' + m.word_mark + '</strong>';
+        html += '<span style="color:' + color + ';font-weight:600;font-size:0.9rem;">' + Math.round(m.similarity * 100) + '% match</span>';
+        html += '</div>';
+        if (m.goods_services) html += '<div style="color:var(--text-muted);font-size:0.85rem;margin-top:4px;">' + m.goods_services + '</div>';
+        html += '<div style="color:var(--text-muted);font-size:0.8rem;margin-top:4px;">Filed ' + m.filing_date + (m.owner_name ? ' by ' + m.owner_name : '') + ' · Class ' + (m.nice_classes || '?') + ' · <a href="https://tsdr.uspto.gov/#caseNumber=' + m.serial_number + '&caseSearchType=US_APPLICATION&caseType=DEFAULT&searchType=statusSearch" target="_blank" style="color:var(--accent);">View on USPTO →</a></div>';
+        html += '</div>';
+      });
+      html += '</div>';
+      html += '<div style="margin-top:16px;padding:16px;background:var(--bg-alt);border-radius:var(--radius);text-align:center;">';
+      html += '<p style="font-weight:600;">New trademarks are filed every day.</p>';
+      html += '<p style="color:var(--text-muted);font-size:0.9rem;margin-top:4px;">Get alerts when new similar marks appear. <a href="#waitlist" style="color:var(--accent);font-weight:600;">Start free monitoring →</a></p>';
+      html += '</div>';
+    }
+    results.innerHTML = html;
+  })
+  .catch(function(err) {
+    results.innerHTML = '<p style="color:var(--danger);padding:16px;">⚠️ Search unavailable — please try again later.</p>';
+  });
   return false;
 }
 
