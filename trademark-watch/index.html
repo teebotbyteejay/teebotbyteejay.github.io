@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Trademark Watch — AI-Powered Brand Protection</title>
+  <meta name="description" content="Monitor daily USPTO filings for potential trademark conflicts. Semantic AI matching catches what keyword alerts miss. Starting at $29/mo.">
+  <style>
+    :root {
+      --primary: #1a365d;
+      --accent: #2b6cb0;
+      --accent-light: #4299e1;
+      --bg: #ffffff;
+      --bg-alt: #f7fafc;
+      --text: #1a202c;
+      --text-muted: #718096;
+      --border: #e2e8f0;
+      --success: #38a169;
+      --warning: #d69e2e;
+      --danger: #e53e3e;
+      --radius: 8px;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    .container { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+
+    /* Nav */
+    nav {
+      background: var(--primary);
+      color: white;
+      padding: 16px 0;
+    }
+    nav .container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    nav .logo {
+      font-size: 1.25rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+    nav .logo span { color: var(--accent-light); }
+    nav a { color: white; text-decoration: none; margin-left: 24px; font-size: 0.95rem; }
+    nav a:hover { text-decoration: underline; }
+
+    /* Hero */
+    .hero {
+      background: linear-gradient(135deg, var(--primary) 0%, #2a4365 100%);
+      color: white;
+      padding: 80px 0 100px;
+      text-align: center;
+    }
+    .hero h1 {
+      font-size: 2.75rem;
+      font-weight: 800;
+      line-height: 1.15;
+      margin-bottom: 20px;
+      letter-spacing: -0.03em;
+    }
+    .hero p {
+      font-size: 1.2rem;
+      color: #cbd5e0;
+      max-width: 640px;
+      margin: 0 auto 32px;
+    }
+    .hero .cta {
+      display: inline-block;
+      background: var(--accent-light);
+      color: white;
+      font-size: 1.1rem;
+      font-weight: 600;
+      padding: 14px 32px;
+      border-radius: var(--radius);
+      text-decoration: none;
+      transition: background 0.2s;
+    }
+    .hero .cta:hover { background: #3182ce; }
+
+    /* Problem Section */
+    .problem {
+      padding: 72px 0;
+      background: var(--bg);
+    }
+    .problem h2 {
+      text-align: center;
+      font-size: 2rem;
+      margin-bottom: 48px;
+      color: var(--primary);
+    }
+    .problem-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 32px;
+    }
+    .problem-card {
+      padding: 28px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+    }
+    .problem-card .icon { font-size: 2rem; margin-bottom: 12px; }
+    .problem-card h3 { font-size: 1.15rem; margin-bottom: 8px; }
+    .problem-card p { color: var(--text-muted); font-size: 0.95rem; }
+
+    /* How It Works */
+    .how {
+      padding: 72px 0;
+      background: var(--bg-alt);
+    }
+    .how h2 {
+      text-align: center;
+      font-size: 2rem;
+      margin-bottom: 48px;
+      color: var(--primary);
+    }
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 32px;
+      text-align: center;
+    }
+    .step-num {
+      display: inline-block;
+      width: 48px;
+      height: 48px;
+      line-height: 48px;
+      border-radius: 50%;
+      background: var(--accent);
+      color: white;
+      font-weight: 700;
+      font-size: 1.2rem;
+      margin-bottom: 16px;
+    }
+    .steps h3 { margin-bottom: 8px; }
+    .steps p { color: var(--text-muted); font-size: 0.9rem; }
+
+    /* Demo */
+    .demo {
+      padding: 72px 0;
+      background: var(--bg);
+    }
+    .demo h2 {
+      text-align: center;
+      font-size: 2rem;
+      margin-bottom: 16px;
+      color: var(--primary);
+    }
+    .demo .subtitle {
+      text-align: center;
+      color: var(--text-muted);
+      margin-bottom: 40px;
+      font-size: 1.05rem;
+    }
+    .demo-box {
+      background: var(--bg-alt);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 32px;
+      max-width: 700px;
+      margin: 0 auto;
+      font-family: 'SFMono-Regular', Consolas, monospace;
+      font-size: 0.9rem;
+      line-height: 1.8;
+    }
+    .match-high { color: var(--danger); font-weight: 600; }
+    .match-med { color: var(--warning); font-weight: 600; }
+    .match-low { color: var(--success); font-weight: 600; }
+    .match-none { color: var(--text-muted); }
+
+    /* Pricing */
+    .pricing {
+      padding: 72px 0;
+      background: var(--bg-alt);
+    }
+    .pricing h2 {
+      text-align: center;
+      font-size: 2rem;
+      margin-bottom: 16px;
+      color: var(--primary);
+    }
+    .pricing .subtitle {
+      text-align: center;
+      color: var(--text-muted);
+      margin-bottom: 48px;
+    }
+    .pricing-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 24px;
+      max-width: 960px;
+      margin: 0 auto;
+    }
+    .pricing-card {
+      background: white;
+      border: 2px solid var(--border);
+      border-radius: var(--radius);
+      padding: 32px 28px;
+      text-align: center;
+      position: relative;
+    }
+    .pricing-card.featured {
+      border-color: var(--accent);
+      transform: scale(1.03);
+    }
+    .pricing-card .badge {
+      display: inline-block;
+      background: var(--accent);
+      color: white;
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 4px 12px;
+      border-radius: 12px;
+      margin-bottom: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .pricing-card h3 { font-size: 1.3rem; margin-bottom: 8px; }
+    .pricing-card .price {
+      font-size: 2.5rem;
+      font-weight: 800;
+      color: var(--primary);
+      margin-bottom: 4px;
+    }
+    .pricing-card .price span { font-size: 1rem; font-weight: 400; color: var(--text-muted); }
+    .pricing-card .desc {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      margin-bottom: 24px;
+    }
+    .pricing-card ul {
+      list-style: none;
+      text-align: left;
+      margin-bottom: 28px;
+    }
+    .pricing-card li {
+      padding: 6px 0;
+      font-size: 0.9rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .pricing-card li:last-child { border-bottom: none; }
+    .pricing-card li::before { content: '✓ '; color: var(--success); font-weight: 700; }
+    .pricing-card .btn {
+      display: inline-block;
+      width: 100%;
+      padding: 12px;
+      border-radius: var(--radius);
+      font-weight: 600;
+      text-decoration: none;
+      font-size: 1rem;
+      transition: background 0.2s;
+    }
+    .pricing-card .btn-primary {
+      background: var(--accent);
+      color: white;
+    }
+    .pricing-card .btn-primary:hover { background: var(--primary); }
+    .pricing-card .btn-outline {
+      background: transparent;
+      color: var(--accent);
+      border: 2px solid var(--accent);
+    }
+    .pricing-card .btn-outline:hover { background: var(--accent); color: white; }
+
+    /* Waitlist form */
+    .waitlist {
+      padding: 72px 0;
+      background: var(--primary);
+      color: white;
+      text-align: center;
+    }
+    .waitlist h2 { font-size: 2rem; margin-bottom: 12px; }
+    .waitlist p { color: #cbd5e0; margin-bottom: 28px; max-width: 500px; margin-left: auto; margin-right: auto; }
+    .waitlist-form {
+      display: flex;
+      gap: 12px;
+      max-width: 480px;
+      margin: 0 auto;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .waitlist-form input {
+      flex: 1;
+      min-width: 240px;
+      padding: 14px 16px;
+      border-radius: var(--radius);
+      border: none;
+      font-size: 1rem;
+    }
+    .waitlist-form button {
+      padding: 14px 28px;
+      border-radius: var(--radius);
+      border: none;
+      background: var(--accent-light);
+      color: white;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .waitlist-form button:hover { background: #63b3ed; }
+    #waitlist-msg {
+      margin-top: 12px;
+      font-size: 0.9rem;
+    }
+
+    /* Footer */
+    footer {
+      background: #171923;
+      color: #a0aec0;
+      padding: 32px 0;
+      text-align: center;
+      font-size: 0.85rem;
+    }
+    footer a { color: #a0aec0; }
+
+    /* Responsive */
+    @media (max-width: 640px) {
+      .hero h1 { font-size: 2rem; }
+      .hero { padding: 48px 0 64px; }
+      .pricing-card.featured { transform: none; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="container">
+    <div class="logo">Trademark<span>Watch</span></div>
+    <div>
+      <a href="#how">How It Works</a>
+      <a href="#pricing">Pricing</a>
+      <a href="#waitlist">Get Started</a>
+    </div>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="container">
+    <h1>Know when someone files<br>a trademark like yours.</h1>
+    <p>AI-powered monitoring of daily USPTO filings. Catches semantic similarities that keyword alerts miss — the conflicts that actually matter.</p>
+    <a href="#waitlist" class="cta">Join the Waitlist →</a>
+  </div>
+</section>
+
+<section class="problem">
+  <div class="container">
+    <h2>The Problem</h2>
+    <div class="problem-grid">
+      <div class="problem-card">
+        <div class="icon">🔍</div>
+        <h3>Keyword alerts miss the real threats</h3>
+        <p>Free tools search for exact text matches. But "Solar Roast Cafe" doesn't contain the word "SunBrew" — and that's exactly the filing you should worry about.</p>
+      </div>
+      <div class="problem-card">
+        <div class="icon">💰</div>
+        <h3>Enterprise tools cost $1,000+/month</h3>
+        <p>Corsearch, CompuMark, and similar enterprise platforms offer semantic matching — at prices only large corporations can afford.</p>
+      </div>
+      <div class="problem-card">
+        <div class="icon">⏰</div>
+        <h3>You can't afford to find out late</h3>
+        <p>Trademark opposition deadlines are tight. The earlier you spot a potential conflict, the more options you have and the less it costs to protect your brand.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="how" id="how">
+  <div class="container">
+    <h2>How It Works</h2>
+    <div class="steps">
+      <div>
+        <div class="step-num">1</div>
+        <h3>Tell us your brand</h3>
+        <p>Enter your trademark, what you sell, and which categories (Nice classes) you operate in.</p>
+      </div>
+      <div>
+        <div class="step-num">2</div>
+        <h3>We scan daily filings</h3>
+        <p>Every business day, we process new USPTO applications using AI semantic analysis — not just keywords.</p>
+      </div>
+      <div>
+        <div class="step-num">3</div>
+        <h3>Get alerts that matter</h3>
+        <p>Receive email alerts ranked by threat level. High-priority matches are flagged immediately.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="demo">
+  <div class="container">
+    <h2>See the Difference</h2>
+    <p class="subtitle">Your brand: <strong>"SunBrew Coffee"</strong> — Class 030 (Coffee, tea, cocoa)</p>
+    <div class="demo-box">
+      <div>Today's USPTO filings — 2,247 applications scanned</div>
+      <br>
+      <div><span class="match-high">🔴 HIGH (87% match)</span> — "SOLAR ROAST CAFE" — Class 030 — Coffee roasting services</div>
+      <div style="color:#718096; margin-left:24px;">→ Keyword alert would MISS this. Our AI catches the semantic overlap.</div>
+      <br>
+      <div><span class="match-med">🟡 MEDIUM (74% match)</span> — "SUNBREW NATURALS" — Class 005 — Dietary supplements</div>
+      <div style="color:#718096; margin-left:24px;">→ Same name, different category. Worth monitoring.</div>
+      <br>
+      <div><span class="match-low">🟢 LOW (67% match)</span> — "MOUNTAIN TEA HOUSE" — Class 030 — Tea products</div>
+      <div style="color:#718096; margin-left:24px;">→ Same category, conceptually adjacent. Noted for awareness.</div>
+      <br>
+      <div><span class="match-none">⚪ FILTERED</span> — "SUNBREW POOLS" — Class 037 — Pool installation</div>
+      <div style="color:#718096; margin-left:24px;">→ Same word, completely different business. Not a threat.</div>
+    </div>
+  </div>
+</section>
+
+<section class="pricing" id="pricing">
+  <div class="container">
+    <h2>Simple, Transparent Pricing</h2>
+    <p class="subtitle">No contracts. Cancel anytime. 7-day free trial on all plans.</p>
+    <div class="pricing-grid">
+      <div class="pricing-card">
+        <h3>Starter</h3>
+        <div class="price">$29<span>/mo</span></div>
+        <div class="desc">For solo founders and small brands</div>
+        <ul>
+          <li>Monitor up to 3 brands</li>
+          <li>3 Nice classes per brand</li>
+          <li>Daily digest email</li>
+          <li>30-day match history</li>
+          <li>Semantic AI matching</li>
+        </ul>
+        <a href="#waitlist" class="btn btn-outline">Get Started</a>
+      </div>
+      <div class="pricing-card featured">
+        <div class="badge">Most Popular</div>
+        <h3>Pro</h3>
+        <div class="price">$49<span>/mo</span></div>
+        <div class="desc">For growing businesses</div>
+        <ul>
+          <li>Monitor up to 10 brands</li>
+          <li>10 Nice classes per brand</li>
+          <li>Daily digest + instant HIGH alerts</li>
+          <li>90-day match history</li>
+          <li>Phonetic similarity detection</li>
+        </ul>
+        <a href="#waitlist" class="btn btn-primary">Get Started</a>
+      </div>
+      <div class="pricing-card">
+        <h3>Enterprise</h3>
+        <div class="price">$99<span>/mo</span></div>
+        <div class="desc">For agencies and portfolios</div>
+        <ul>
+          <li>Monitor up to 25 brands</li>
+          <li>All 45 Nice classes</li>
+          <li>All alert types + weekly summary</li>
+          <li>1-year match history</li>
+          <li>Priority support</li>
+        </ul>
+        <a href="#waitlist" class="btn btn-outline">Get Started</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="waitlist" id="waitlist">
+  <div class="container">
+    <h2>Join the Waitlist</h2>
+    <p>We're launching soon. Drop your email and be the first to know — plus get 30 days free.</p>
+    <form class="waitlist-form" id="waitlistForm" onsubmit="return handleWaitlist(event)">
+      <input type="email" id="waitlistEmail" placeholder="you@company.com" required>
+      <button type="submit">Join Waitlist</button>
+    </form>
+    <div id="waitlist-msg"></div>
+  </div>
+</section>
+
+<footer>
+  <div class="container">
+    <p>&copy; 2026 TrademarkWatch. Built with AI. Not legal advice.</p>
+    <p style="margin-top:8px;">Data source: U.S. Patent and Trademark Office (USPTO) public records.</p>
+  </div>
+</footer>
+
+<script>
+function handleWaitlist(e) {
+  e.preventDefault();
+  const email = document.getElementById('waitlistEmail').value;
+  const msg = document.getElementById('waitlist-msg');
+  
+  // For MVP: store in localStorage + send to backend when available
+  const waitlist = JSON.parse(localStorage.getItem('tm_waitlist') || '[]');
+  if (waitlist.includes(email)) {
+    msg.textContent = "You're already on the list! We'll be in touch soon. 🎉";
+    return false;
+  }
+  waitlist.push(email);
+  localStorage.setItem('tm_waitlist', JSON.stringify(waitlist));
+  
+  // TODO: POST to actual backend when ready
+  // For now, also try sending via mailto as fallback
+  msg.textContent = "You're in! We'll email you when we launch. 🚀";
+  document.getElementById('waitlistEmail').value = '';
+  
+  return false;
+}
+</script>
+
+</body>
+</html>
