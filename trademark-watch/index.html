@@ -500,8 +500,12 @@ function handleWaitlist(e) {
   waitlist.push(email);
   localStorage.setItem('tm_waitlist', JSON.stringify(waitlist));
   
-  // TODO: POST to actual backend when ready
-  // For now, also try sending via mailto as fallback
+  // Send signup notification via email
+  fetch('https://formspree.io/f/trademarkwatch', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: email, source: 'trademark-watch-waitlist', _subject: 'New TM Watch waitlist signup: ' + email })
+  }).catch(function() {});
   msg.textContent = "You're in! We'll email you when we launch. 🚀";
   document.getElementById('waitlistEmail').value = '';
   
