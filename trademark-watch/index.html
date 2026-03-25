@@ -447,7 +447,7 @@
           <li>Semantic + phonetic matching</li>
           <li>30-day match history</li>
         </ul>
-        <a href="#waitlist" class="btn btn-primary">Join Waitlist</a>
+        <a href="#waitlist" class="btn btn-primary">Start Monitoring</a>
       </div>
       <div class="pricing-card">
         <h3>Pro</h3>
@@ -460,7 +460,7 @@
           <li>90-day match history</li>
           <li>Phonetic + character similarity</li>
         </ul>
-        <a href="#waitlist" class="btn btn-outline">Join Waitlist</a>
+        <a href="#waitlist" class="btn btn-outline">Start Monitoring</a>
       </div>
     </div>
   </div>
@@ -484,13 +484,15 @@
 
 <section class="waitlist" id="waitlist">
   <div class="container">
-    <h2>Join the Waitlist</h2>
-    <p>We're launching soon. Drop your email and be the first to know — plus get 30 days free.</p>
-    <form class="waitlist-form" id="waitlistForm" onsubmit="return handleWaitlist(event)">
-      <input type="email" id="waitlistEmail" placeholder="you@company.com" required>
-      <button type="submit">Join Waitlist</button>
+    <h2>Start Free Monitoring</h2>
+    <p>Get email alerts when new trademarks similar to yours are filed. Free for 1 brand — no credit card required.</p>
+    <form class="waitlist-form" id="signupForm" onsubmit="return handleSignup(event)">
+      <input type="email" id="signupEmail" placeholder="you@company.com" required>
+      <input type="text" id="signupBrand" placeholder="Your brand name" required style="margin-top:8px;">
+      <input type="text" id="signupDesc" placeholder="What you sell (optional)" style="margin-top:8px;">
+      <button type="submit" style="margin-top:8px;">Start Monitoring — Free</button>
     </form>
-    <div id="waitlist-msg"></div>
+    <div id="signup-msg"></div>
   </div>
 </section>
 
@@ -502,7 +504,7 @@
 </footer>
 
 <script>
-var API_URL = 'http://104.236.27.87:8741';
+var API_URL = 'http://brand.platphorm.io:8741';
 
 function handleSearch(e) {
   e.preventDefault();
@@ -547,7 +549,7 @@ function handleSearch(e) {
       html += '</div>';
       html += '<div style="margin-top:16px;padding:16px;background:var(--bg-alt);border-radius:var(--radius);text-align:center;">';
       html += '<p style="font-weight:600;">New trademarks are filed every day.</p>';
-      html += '<p style="color:var(--text-muted);font-size:0.9rem;margin-top:4px;">Get alerts when new similar marks appear. <a href="#waitlist" style="color:var(--accent);font-weight:600;">Start free monitoring →</a></p>';
+      html += '<p style="color:var(--text-muted);font-size:0.9rem;margin-top:4px;">Get alerts when new similar marks appear. <a href="javascript:void(0)" onclick="prefillSignup(\'' + mark.replace(/'/g, "\\'") + '\')" style="color:var(--accent);font-weight:600;">Start free monitoring →</a></p>';
       html += '</div>';
     }
     results.innerHTML = html;
@@ -558,30 +560,43 @@ function handleSearch(e) {
   return false;
 }
 
-function handleWaitlist(e) {
+function handleSignup(e) {
   e.preventDefault();
-  const email = document.getElementById('waitlistEmail').value;
-  const msg = document.getElementById('waitlist-msg');
+  var email = document.getElementById('signupEmail').value;
+  var brand = document.getElementById('signupBrand').value;
+  var desc = document.getElementById('signupDesc').value;
+  var msg = document.getElementById('signup-msg');
   
-  // For MVP: store in localStorage + send to backend when available
-  const waitlist = JSON.parse(localStorage.getItem('tm_waitlist') || '[]');
-  if (waitlist.includes(email)) {
-    msg.textContent = "You're already on the list! We'll be in touch soon. 🎉";
-    return false;
-  }
-  waitlist.push(email);
-  localStorage.setItem('tm_waitlist', JSON.stringify(waitlist));
+  msg.innerHTML = '<span style="color:var(--text-muted);">Setting up monitoring...</span>';
   
-  // Send signup notification via email
-  fetch('https://formspree.io/f/trademarkwatch', {
+  fetch(API_URL + '/signup', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email: email, source: 'trademark-watch-waitlist', _subject: 'New TM Watch waitlist signup: ' + email })
-  }).catch(function() {});
-  msg.textContent = "You're in! We'll email you when we launch. 🚀";
-  document.getElementById('waitlistEmail').value = '';
-  
+    body: JSON.stringify({ email: email, brand_name: brand, description: desc })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(data) {
+    if (data.error) {
+      msg.innerHTML = '<span style="color:var(--danger);">⚠️ ' + data.error + '</span>';
+    } else if (data.upgrade_needed) {
+      msg.innerHTML = '<span style="color:var(--accent);">' + data.message + '</span>';
+    } else {
+      msg.innerHTML = '<span style="color:var(--success, #38a169);">✅ ' + data.message + '</span>';
+      document.getElementById('signupBrand').value = '';
+      document.getElementById('signupDesc').value = '';
+    }
+  })
+  .catch(function(err) {
+    msg.innerHTML = '<span style="color:var(--danger);">⚠️ Signup unavailable — please try again later.</span>';
+  });
   return false;
+}
+
+// Pre-fill signup brand from search
+function prefillSignup(brandName) {
+  document.getElementById('signupBrand').value = brandName;
+  document.getElementById('signupEmail').focus();
+  document.getElementById('waitlist').scrollIntoView({ behavior: 'smooth' });
 }
 </script>
 
